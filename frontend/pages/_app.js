@@ -4,12 +4,13 @@ import { LightTheme } from '../src/themes'
 import { ThemeProvider } from '@mui/material';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Loading, Notify, AlertComponent, ConfirmComponent } from '../src/components';
-import '../src/themes/global.css';
+import { GlobalStyle } from '../src/themes/GlobalStyle';
 
 function MyApp({ Component, pageProps }) {
   return (
     <Provider store={store}>
       <ThemeProvider theme={LightTheme}>
+        <GlobalStyle />
         {/* <ConfirmComponent
           open={true}
           onClose={() => alert('close')}
