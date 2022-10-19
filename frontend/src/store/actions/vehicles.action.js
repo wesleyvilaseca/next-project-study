@@ -102,11 +102,64 @@ export const destroy = (id) => dispatch => {
         })
 }
 
+export const brand = (vehicle_type) => dispatch => {
+    dispatch(changeLoading({ open: true }));
+    const endpoint = '/api/vehicles';
+    return HttpAuth.get(`${endpoint}/${vehicle_type}/brand`)
+        .then(res => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(indexResponse(res.data));
+            return res;
+        })
+        .catch(error => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(success(false));
+            console.log("error", error);
+        })
+}
+
+export const model = (vehicle_type, vehicle_brand) => dispatch => {
+    dispatch(changeLoading({ open: true }));
+    const endpoint = '/api/vehicles';
+    return HttpAuth.get(`${endpoint}/${vehicle_type}/${vehicle_brand}/model`)
+        .then(res => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(indexResponse(res.data));
+            return res;
+        })
+        .catch(error => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(success(false));
+            console.log("error", error);
+        })
+}
+
+export const version = (vehicle_brand, vehicle_model) => dispatch => {
+    dispatch(changeLoading({ open: true }));
+    const endpoint = '/api/vehicles';
+    return HttpAuth.get(`${endpoint}/${vehicle_brand}/${vehicle_model}/version`)
+        .then(res => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(indexResponse(res.data));
+            return res;
+        })
+        .catch(error => {
+            dispatch(changeLoading({ open: false }));
+            dispatch(success(false));
+            console.log("error", error);
+        })
+}
+
 export const get_cep = (zipCode) => dispatch => {
     // dispatch(changeLoading({ open: true }));
     const endpoint = '/api/webservice/cep';
     const body = { cep: zipCode };
     return HttpAuth.post(`${endpoint}`, body)
+        .then(res => {
+            dispatch(change(res.data))
+            dispatch(success(true));
+            return res;
+        })
         .catch(error => {
             // dispatch(changeLoading({ open: false }));
             dispatch(success(false));

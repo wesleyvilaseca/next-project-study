@@ -4,7 +4,7 @@ import Header from '../../layout/Header'
 import { useRouter } from 'next/router'
 import { changeLoading } from "../../store/actions/loading.action";
 import { useSelector, useDispatch } from 'react-redux';
-import { store, show, change, get_cep } from '../../store/actions/vehicles.action';
+import { store, show, change, get_cep, brand, model, version } from '../../store/actions/vehicles.action';
 import MaskedInput from 'react-text-mask';
 import { TextField, InputAdornment, CircularProgress, Select, MenuItem } from '@mui/material';
 
@@ -107,7 +107,6 @@ export default function VehicleCreateScreen() {
                                                         dispatch(get_cep(text.target.value))
                                                             .then(res => {
                                                                 if (res) setState({ isLoadingCep: false })
-
                                                             })
                                                             .catch(error => {
                                                                 setState({ isLoadingCep: false })
@@ -138,10 +137,10 @@ export default function VehicleCreateScreen() {
                                 <div className='row mt-2'>
                                     <div className='col-md-9 form-group'>
                                         <TextField
-                                            label="Cidade"
+                                            label=""
                                             error={(data.error.city) && true}
                                             disabled
-                                            value={data.vehicle.city}
+                                            value={data.vehicle.city || ''}
                                         />
                                         {(data.error.city) &&
                                             <strong className='text-danger'>{data.error.city[0]}</strong>
@@ -149,10 +148,10 @@ export default function VehicleCreateScreen() {
                                     </div>
                                     <div className='col-md-3 form-group'>
                                         <TextField
-                                            label="UF"
+                                            label=""
                                             error={(data.error.uf) && true}
                                             disabled
-                                            value={data.vehicle.uf}
+                                            value={data.vehicle.uf || ''}
                                         />
                                         {(data.error.city) &&
                                             <strong className='text-danger'>{data.error.uf[0]}</strong>
@@ -168,16 +167,162 @@ export default function VehicleCreateScreen() {
                                     <Select
                                         label="Categoria"
                                         error={data.error.vehicle_type && true}
-                                        value={data.vehicle.vehicle_type}
+                                        value={data.vehicle.vehicle_type || ''}
                                         onChange={event => {
+                                            dispatch(change({
+                                                vehicle_type: event.target.value,
+                                                vehicle_brand: null,
+                                                vehicle_model: null,
+                                                vehicle_version: null,
+                                                vehicle_gearbox: null,
+                                                vehicle_fuel: null,
+                                                vehicle_steering: null,
+                                                vehicle_motorpower: null,
+                                                vehicle_doors: null
+                                            }));
 
+                                            dispatch(brand(event.target.value))
+                                            if (data.error.vehicle_type) {
+                                                delete data.error.vehicle_type
+                                            }
                                         }}
                                         fullWidth
                                     >
-                                        {data.types.map(item => (
+                                        {data.types?.map(item => (
                                             <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
                                         ))}
                                     </Select>
+                                    {(data.error.vehicle_type) &&
+                                        <strong className='text-danger'>{data.error.vehicle_type[0]}</strong>
+                                    }
+                                </div>
+
+                                <div className='form-group'>
+                                    <label className='label-custom'>Marcas</label>
+                                    <Select
+                                        label="Marcas"
+                                        error={data.error.vehicle_brand && true}
+                                        value={data.vehicle.vehicle_brand || ''}
+                                        onChange={event => {
+                                            dispatch(change({
+                                                vehicle_brand: event.target.value,
+                                                vehicle_model: null,
+                                                vehicle_version: null,
+                                                // vehicle_gearbox: null,
+                                                // vehicle_fuel: null,
+                                                // vehicle_steering: null,
+                                                // vehicle_motorpower: null,
+                                                // vehicle_doors: null
+                                            }));
+
+                                            dispatch(model(data.vehicle.vehicle_type, event.target.value))
+                                            if (data.error.vehicle_brand) {
+                                                delete data.error.vehicle_brand
+                                            }
+                                        }}
+                                        fullWidth
+                                    >
+                                        {data.vehicle_brand?.map(item => (
+                                            <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                        ))}
+                                    </Select>
+                                    {(data.error.vehicle_brand) &&
+                                        <strong className='text-danger'>{data.error.vehicle_brand[0]}</strong>
+                                    }
+                                </div>
+
+                                <div className='row'>
+                                    <div className='col-md-6 form-group'>
+                                        <label className='label-custom'>Modelo</label>
+                                        <Select
+                                            label="Marcas"
+                                            error={data.error.vehicle_model && true}
+                                            value={data.vehicle.vehicle_model || 0}
+                                            onChange={event => {
+                                                dispatch(change({
+                                                    vehicle_model: event.target.value,
+                                                    vehicle_version: null
+                                                }));
+
+                                                dispatch(version(data.vehicle.vehicle_brand, event.target.value))
+                                                if (data.error.vehicle_model) {
+                                                    delete data.error.vehicle_model
+                                                }
+                                            }}
+                                            fullWidth
+                                        >
+                                            {data.vehicle_model?.map(item => (
+                                                <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                            ))}
+                                        </Select>
+                                        {(data.error.vehicle_model) &&
+                                            <strong className='text-danger'>{data.error.vehicle_model[0]}</strong>
+                                        }
+                                    </div>
+                                    <div className='col-md-6 form-group'>
+                                        <div className='col-md-6 form-group'>
+                                            <label className='label-custom'>Ano do modelo</label>
+                                            <Select
+                                                label="Ano"
+                                                error={data.error.regdate && true}
+                                                value={data.vehicle.vehicle_regdate || 0}
+                                                onChange={event => {
+                                                    dispatch(change({
+                                                        vehicle_regdate: event.target.value,
+                                                    }));
+
+                                                    if (data.error.regdate) {
+                                                        delete data.error.regdate
+                                                    }
+
+                                                    // dispatch(version(data.vehicle.vehicle_brand, event.target.value))
+                                                    // if (data.error.vehicle_model) {
+                                                    //     delete data.error.vehicle_model
+                                                    // }
+                                                }}
+                                                fullWidth
+                                            >
+                                                {data.regdate?.map(item => (
+                                                    <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                ))}
+                                            </Select>
+                                            {(data.error.regdate) &&
+                                                <strong className='text-danger'>{data.error.regdate[0]}</strong>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div className='col-md-6 form-group'>
+                                        <label className='label-custom'>Versão</label>
+                                        <Select
+                                            label="Versão"
+                                            error={data.error.vehicle_version && true}
+                                            value={data.vehicle.vehicle_version || 0}
+                                            onChange={event => {
+                                                dispatch(change({
+                                                    vehicle_version: event.target.value,
+                                                }));
+
+                                                if (data.error.vehicle_version) {
+                                                    delete data.error.vehicle_version
+                                                }
+
+                                                // dispatch(version(data.vehicle.vehicle_brand, event.target.value))
+                                                // if (data.error.vehicle_model) {
+                                                //     delete data.error.vehicle_model
+                                                // }
+                                            }}
+                                            fullWidth
+                                        >
+                                            {data.vehicle_version?.map(item => (
+                                                <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                            ))}
+                                        </Select>
+                                        {(data.error.vehicle_version) &&
+                                            <strong className='text-danger'>{data.error.vehicle_version[0]}</strong>
+                                        }
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
