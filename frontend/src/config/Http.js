@@ -1,12 +1,8 @@
 import Axios from 'axios';
 import { apiUrl, rootUrl } from './App';
 
-export const Http = (options) => Axios.create({
-    baseURL: apiUrl,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+export const Http = Axios.create({
+    baseURL: apiUrl
 })
 
 export const HttpAuth = Axios.create({

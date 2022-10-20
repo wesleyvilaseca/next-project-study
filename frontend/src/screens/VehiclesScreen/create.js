@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { store, show, change, get_cep, brand, model, version } from '../../store/actions/vehicles.action';
 import MaskedInput from 'react-text-mask';
 import { TextField, InputAdornment, CircularProgress, Select, MenuItem } from '@mui/material';
+import { NumericFormat } from 'react-number-format';
 
 const TextMaskCustom = (props) => {
     const { inputRef, ...other } = props;
@@ -18,6 +19,25 @@ const TextMaskCustom = (props) => {
             ref={inputRef}
             mask={mask}
             guide={false}
+        />
+    )
+}
+
+const NumberFormatCustom = (props) => {
+    const { inputRef, onChange, ...other } = props;
+    return (
+        <NumericFormat
+            {...other}
+            decimalSeparator=","
+            thousandSeparator="."
+            prefix={other.name}
+            onChangeValue={values => {
+                onChange({
+                    target: {
+                        value: values.value
+                    }
+                })
+            }}
         />
     )
 }
@@ -325,6 +345,139 @@ export default function VehicleCreateScreen() {
 
                                 </div>
                             </div>
+                            {(data.vehicle.vehicle_type === 2020) &&
+                                <div className='card card-body mt-2'>
+                                    <div className='row'>
+
+                                        <>
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Câmbio</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_gearbox || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_gearbox: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.gearbox?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Combustível</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_fuel || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_fuel: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.fuel?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+
+
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Direção</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_steering || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_steering: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.car_steering?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Potência do motor</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_motorpower || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_motorpower: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.motor_power?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Portas</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_doors || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_doors: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.doors?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+                                        </>
+
+                                    </div>
+                                </div>
+                            }
+
+                            {(data.vehicle.vehicle_type === 2060) &&
+                                <div className='card card-body mt-2'>
+                                    <div className='row'>
+                                        <>
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Cilindradas</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_cubccms || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_cubccms: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.cubccms?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Cor</label>
+                                                <Select
+                                                    fullWidth
+                                                    value={data.vehicle.vehicle_color || 0}
+                                                    onChange={event => {
+                                                        dispatch(change({ vehicle_color: event.target.value }))
+                                                    }}
+                                                >
+                                                    {data.carcolor?.map(item => (
+                                                        <MenuItem key={item.id} value={item.value}>{item.label}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </div>
+
+                                            <div className='col-md-6 form-group'>
+                                                <label className='label-custom'>Km</label>
+                                                <TextField
+                                                    type="tel"
+                                                    InputProps={{
+                                                        inputComponent: NumberFormatCustom,
+                                                        value: data.vehicle.vehicle_mileage || '',
+                                                        onChange: text => dispatch(change({ vehicle_mileage: text.target.value }))
+                                                    }} />
+                                            </div>
+                                        </>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </div>
                 )}

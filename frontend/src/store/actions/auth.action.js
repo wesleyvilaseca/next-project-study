@@ -27,7 +27,7 @@ export const setUserToken = token => dispatch => {
     dispatch(success(true))
 }
 
-export const login = credentials => async dispatch => {
+export const login = credentials => dispatch => {
     dispatch(changeLoading({ open: true, msg: 'Autenticando' }));
 
     const endpoint = 'oauth/token';
@@ -40,7 +40,7 @@ export const login = credentials => async dispatch => {
         scope: ''
     }
 
-    return await Http.post(endpoint, body)
+    return Http.post(endpoint, body)
         .then(res => {
             dispatch(changeLoading({ open: false }));
             if (typeof res !== 'undefined') {
