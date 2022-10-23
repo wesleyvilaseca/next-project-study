@@ -9,6 +9,23 @@ export const HttpAuth = Axios.create({
     baseURL: apiUrl,
 })
 
+// export const Http = Axios.create({
+//     baseURL: apiUrl
+// })
+
+export const HttpAuthUpload = Axios.create({
+    baseURL: apiUrl,
+})
+
+HttpAuthUpload.interceptors.request.use(
+    async (config) => {
+        config.headers.authorization = `Bearer ${await localStorage.getItem('access_token')}`
+        config.headers.accept = 'application/json'
+        config.headers['Content-Type'] = 'multipart/form-data'
+        return config;
+    }
+)
+
 HttpAuth.interceptors.request.use(
     async (config) => {
         config.headers.authorization = `Bearer ${await localStorage.getItem('access_token')}`

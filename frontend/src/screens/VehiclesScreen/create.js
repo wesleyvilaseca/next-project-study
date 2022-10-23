@@ -4,10 +4,29 @@ import Header from '../../layout/Header'
 import { useRouter } from 'next/router'
 import { changeLoading } from "../../store/actions/loading.action";
 import { useSelector, useDispatch } from 'react-redux';
-import { store, show, change, get_cep, brand, model, version } from '../../store/actions/vehicles.action';
+import { store, show, change, get_cep, brand, model, version, uploadPhoto, deletePhoto, reorderPhoto } from '../../store/actions/vehicles.action';
 import MaskedInput from 'react-text-mask';
-import { TextField, InputAdornment, CircularProgress, Select, MenuItem } from '@mui/material';
+import { TextField, InputAdornment, CircularProgress, Select, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
 import { NumericFormat } from 'react-number-format';
+import {arrayMoveImmutable} from 'array-move';
+import { apiUrl } from '../../config/App';
+import { SortableContainer, SortableElement } from 'react-sortable-hoc';
+import { FaTrash } from 'react-icons/fa';
+import { ConfirmComponent } from '../../components'
+
+const SortableItem = SortableElement(({ value }) => {
+    return (
+        <div
+            className='bg-img'
+            style={{ background: `url(${apiUrl}api/thumb/vehicles/${value.image}?u=${value.user_id}&s=${value.vehicle_id}&h=250&w=250)` }}
+        >
+        </div>
+    )
+});
+
+const SortableList = SortableContainer(({ children }) => {
+    return <div className='row'>{children}</div>
+})
 
 const TextMaskCustom = (props) => {
     const { inputRef, ...other } = props;
@@ -31,7 +50,7 @@ const NumberFormatCustom = (props) => {
             decimalSeparator=","
             thousandSeparator="."
             prefix={other.name}
-            onChangeValue={values => {
+            onChange={values => {
                 onChange({
                     target: {
                         value: values.value
@@ -59,14 +78,6 @@ export default function VehicleCreateScreen() {
 
     if (state.isLoading) dispatch(changeLoading({ open: true }))
 
-    useEffect(() => {
-        if (!router.isReady) return;
-        const id = router.query.id
-        if (id) setState({ vehicle_id: id })
-
-        index()
-
-    }, [router.isReady])
 
     const index = () => {
         if (state.vehicle_id) {
@@ -91,6 +102,51 @@ export default function VehicleCreateScreen() {
                     dispatch(changeLoading({ open: false }))
                 })
         }
+    }
+
+
+    useEffect(() => {
+        if (!router.isReady) return;
+        const id = router.query.id
+        if (id) setState({ vehicle_id: id })
+
+        index()
+
+    }, [router.isReady, setState])
+
+    const handleUpload = (event) => {
+        [...event.target.files].map(img => {
+            const body = new FormData();
+            body.append('file', img);
+            body.append('id', data.vehicle.id);
+
+            return dispatch(uploadPhoto(body));
+        })
+
+        if (data.error.photos && delete data.error.photos);
+
+    }
+
+    const _deletePhoto = (id) => {
+        setState({ isDeleted: id });
+        dispatch(deletePhoto(id))
+            .then(res => {
+                res && setState({ isDeleted: null });
+            })
+            .catch(error => {
+                console.log(error);
+            })
+    }
+
+    const onSortEnd = ({ oldIndex, newIndex }) => {
+        // return console.log(oldIndex, newIndex, data.vehicle.vehicle_photos);
+        let items = arrayMoveImmutable(data.vehicle.vehicle_photos, oldIndex, newIndex);
+        let order = items.map(({ id }) => id);
+        dispatch(reorderPhoto({ order: order }, items));
+    }
+
+    const handleConfirm = event => {
+        setState({ confirmEl: event.currentTarget })
     }
 
     return (
@@ -478,6 +534,175 @@ export default function VehicleCreateScreen() {
                                     </div>
                                 </div>
                             }
+
+                            <div className='card card-body mt-4 mb-4'>
+                                <h3 className='font-weight-normal'> Itens e opcionais </h3>
+                                <div className='row'>
+                                    {data.features.map(item => (item.vehicle_type_id === data.vehicle.vehicle_type) && (
+                                        <div key={item.id} className="col-md-6">
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={data.vehicle.vehicle_features[item.value] ? true : false}
+                                                        onChange={() => {
+                                                            let checked = data.vehicle.vehicle_features[item.value] ?
+                                                                delete data.vehicle.vehicle_features[item.value] :
+                                                                { [item.value]: item }
+
+                                                            dispatch(change({
+                                                                vehicle_features: {
+                                                                    ...data.vehicle.vehicle_features,
+                                                                    ...checked
+                                                                }
+                                                            }))
+                                                        }}
+
+                                                    />
+                                                }
+                                                label={item.label}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className='card card-body mt-4 mb-4'>
+                                <h3 className='font-weight-normal'> Financeiro </h3>
+                                <div className='form-group'>
+                                    <label>Estado financeiro</label>
+                                    <div className='row'>
+                                        {data.financial.map(item => (
+                                            <div key={item.id} className="col-md-6">
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={data.vehicle.vehicle_financial[item.value] ? true : false}
+                                                            onChange={() => {
+                                                                let checked = data.vehicle.vehicle_financial[item.value] ?
+                                                                    delete data.vehicle.vehicle_financial[item.value] :
+                                                                    { [item.value]: item }
+
+                                                                dispatch(change({
+                                                                    vehicle_financial: {
+                                                                        ...data.vehicle.vehicle_financial,
+                                                                        ...checked
+                                                                    }
+                                                                }))
+                                                            }}
+
+                                                        />
+                                                    }
+                                                    label={item.label}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div className='row'>
+                                <div className='col-md-6 form-group'>
+                                    <label> Preço </label>
+                                    <TextField
+                                        fullWidth
+                                        type="tel"
+                                        name="R$ "
+                                        InputProps={{
+                                            inputComponent: NumberFormatCustom,
+                                            value: data.vehicle.vehicle_price || '',
+                                            onChange: text => {
+                                                dispatch(change({ vehicle_price: text.target.value }))
+                                                if (data.error.vehicle_price)
+                                                    delete data.error.vehicle_price
+                                            }
+                                        }}
+                                    />
+                                    {(data.error.vehicle_price) &&
+                                        <strong className='text-danger'>{data.error.vehicle_price[0]}</strong>
+                                    }
+                                </div>
+                            </div>
+
+                            <div className='card card-body mt-4 mb-4'>
+                                <h3 className='font-weight-normal'> Titulo e descrição do anúncio </h3>
+                                <div className='form-group'>
+                                    <label>Titulo</label>
+                                    <TextField
+                                        fullWidth
+                                        value={data.vehicle.title || ''}
+                                        onChange={text => dispatch({ title: text.target.value })}
+                                    />
+                                </div>
+
+                                <div className='form-group'>
+                                    <label>Descrição</label>
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        rows="5"
+                                        value={data.vehicle.description || ''}
+                                        onChange={text => dispatch({ description: text.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className='card card-body mt-4 mb-4'>
+                                <h3>Fotos</h3>
+                                <div>
+                                    {(data.error.photos) &&
+                                        <strong className='text-dander'> {data.error.photos[0]} </strong>
+                                    }
+
+                                    <SortableList
+                                        axis="xy"
+                                        onSortEnd={onSortEnd}
+                                    >
+                                        {data.vehicle.vehicle_photos.map((item, index) => (
+                                            <div key={item.id} className='col-6 col-md-4'>
+                                                <div className="box-image d-flex justify-content-center align-items-center mt-3">
+                                                    {(state.isDeleted === item.id) ?
+                                                        <CircularProgress size="30" color="secondary" /> :
+                                                        <>
+                                                            <span id={item.id} onClick={handleConfirm} className='img-action d-flex justify-content-center align-items-center'>
+                                                                <FaTrash color="#fff" size="1.2em" />
+                                                            </span>
+
+                                                            <SortableItem
+                                                                key={`item-${item.id}`}
+                                                                index={index}
+                                                                value={item}
+                                                            />
+
+                                                            {(Boolean(state.confirmEl) &&
+                                                                <ConfirmComponent
+                                                                    open={(item.id === parseInt(state.confirmEl.id))}
+                                                                    onConfirm={() => _deletePhoto(item.id)}
+                                                                    onClose={() => setState({ confirmEl: null })}
+                                                                />
+                                                            )}
+                                                        </>
+                                                    }
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div className='col-6 col-md-4'>
+                                            <div className='box-image box-upload d-flex justify-content-center align-items-center mt-3'>
+                                                <input onChange={handleUpload} type="file" multiple name="file" className='file-input' />
+                                                {(data.upload_photo) ?
+                                                    <CircularProgress /> :
+                                                    <p className='box-text'>
+                                                        <span className='text-plus'>+</span>
+                                                        <span>Adicionar</span>
+                                                    </p>
+                                                }
+                                            </div>
+                                        </div>
+                                    </SortableList>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 )}

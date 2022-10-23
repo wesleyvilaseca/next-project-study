@@ -9,7 +9,7 @@ export default function ConfirmComponent(props) {
             open={open}
             onClose={() => onClose()}
         >
-            <DialogTitle disableTypography><h6>{title || 'Tem certeza que deseja excluir ?'}</h6></DialogTitle>
+            <DialogTitle disableTypography><h2>{title || 'Tem certeza que deseja excluir ?'}</h2></DialogTitle>
             <Button onClick={() => onClose()}>
                 Não
             </Button>

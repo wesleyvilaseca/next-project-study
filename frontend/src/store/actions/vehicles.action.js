@@ -1,4 +1,4 @@
-import { HttpAuth } from "../../config/Http";
+import { HttpAuth, HttpAuthUpload } from "../../config/Http";
 import { changeLoading } from "./loading.action";
 import { changeNotify } from "./notify.action";
 
@@ -10,6 +10,9 @@ export const actionTypes = {
     CHANGE: 'VEHICLE_CHANGE',
     SUCCESS: 'VEHICLE_SUCCESS',
     ERROR: 'VEHICLE_ERROR',
+    UPLOAD_PHOTO: 'VEHICLE_UPLOAD_PHOTO',
+    DELETE_PHOTO: 'VEHICLE_DELETE_PHOTO',
+    REORDER_PHOTO: 'VEHICLE_REORDER_PHOTO'
 }
 
 export const change = (payload) => ({
@@ -32,6 +35,62 @@ export const indexResponse = (payload, isLoadMore) => ({
     payload,
     isLoadMore
 })
+
+export const uploadPhotoResponse = (payload) => ({
+    type: actionTypes.UPLOAD_PHOTO,
+    payload
+})
+
+export const uploadPhoto = (item) => dispatch => {
+    dispatch(indexResponse({ upload_photo: true }));
+    const endpoint = '/api/upload/vehicle';
+    return HttpAuthUpload.post(`${endpoint}`, item)
+        .then(res => {
+            dispatch(indexResponse({ upload_photo: false }));
+
+            if (res.data.id) dispatch(uploadPhotoResponse(res.data));
+        })
+        .catch(error => {
+            console.log("error", error)
+        })
+}
+
+
+export const deletePhotoResponse = (payload) => ({
+    type: actionTypes.DELETE_PHOTO,
+    payload
+})
+
+export const deletePhoto = (id) => dispatch => {
+    const endpoint = '/api/upload/vehicle';
+    return HttpAuthUpload.delete(`${endpoint}/${id}`)
+        .then(res => {
+            console.log(res.data.id);
+            if (res.data.id) dispatch(deletePhotoResponse(res.data));
+        })
+        .catch(error => {
+            console.log("error", error)
+        })
+}
+
+export const reorderPhotoResponse = (payload) => ({
+    type: actionTypes.REORDER_PHOTO,
+    payload
+})
+
+export const reorderPhoto = (position, data) => dispatch => {
+
+    dispatch(reorderPhotoResponse(data));
+
+    const endpoint = '/api/upload/vehicle/any';
+    return HttpAuth.put(`${endpoint}`, position)
+        .then(res => {
+            console.log(res);
+        })
+        .catch(error => {
+            console.log("error", error)
+        })
+}
 
 export const index = (query, isLoadMore) => dispatch => {
     const endpoint = '/api/vehicles';
