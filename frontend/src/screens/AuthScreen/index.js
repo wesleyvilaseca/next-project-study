@@ -15,7 +15,7 @@ export default function AuthScreen() {
 
     useEffect(() => {
         if ((success)) {
-            router.push('/products')
+            router.push('/vehicles')
         }
     }, [success])
 

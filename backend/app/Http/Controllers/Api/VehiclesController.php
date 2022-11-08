@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\VehicleUpdateRequest;
 use App\Models\Vehicle;
 use App\Models\Vehicle_brand;
 use App\Models\Vehicle_car_steering;
@@ -21,6 +22,7 @@ use App\Models\Vehicle_type;
 use App\Models\Vehicle_version;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class VehiclesController extends Controller
 {
@@ -55,7 +57,19 @@ class VehiclesController extends Controller
      */
     public function index()
     {
-        //
+        $vehicles = Vehicle::where('user_id', $this->user->id)
+            ->where('status', 1)
+            ->with(['cover', 'vehicle_brand', 'vehicle_fuel', 'vehicle_color', 'vehicle_gearbox'])
+            ->paginate(12);
+
+        $vehicles->transform(function ($vehicle) {
+            $vehicle->vehicle_model = $vehicle->vehicle_model();
+            if(@$vehicle->version) $vehicle->version = $vehicle->vehicle_version();
+
+            return $vehicle;
+        });
+
+        return compact('vehicles');
     }
 
     /**
@@ -72,6 +86,8 @@ class VehiclesController extends Controller
                 'status' => 0
             ]);
 
+        $vehicle = $vehicle->fresh('vehicle_photos');
+
         return array_merge(['vehicle' => $vehicle], $this->getData());
     }
 
@@ -83,7 +99,6 @@ class VehiclesController extends Controller
      */
     public function show($id)
     {
-        //
     }
 
     /**
@@ -93,9 +108,24 @@ class VehiclesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(VehicleUpdateRequest $request, $id)
     {
-        //
+        $vehicle = Vehicle::where('user_id', $this->user->id)->find($id);
+        $vehicle_price = (float) str_replace("R$ ", "", $request->vehicle_price);
+
+        if (!$vehicle) return response()->json(['error' => 'operação não autorizada'], 400);
+
+        $vehicle->fill($request->except(['vehicle_photos', 'vehicle_version']));
+        $vehicle->status = 1;
+        $vehicle->uf_url = $request->uf;
+        $vehicle->city_url = $request->city;
+        $vehicle->vehicle_price = $vehicle_price;
+
+        $res = $vehicle->update();
+
+        if (!$res)  return response()->json(['error' => 'operação ao salvar o veiculo'], 400);
+
+        return response()->json(['success' => 'Dados atualizados com sucesso'], 200);
     }
 
     /**

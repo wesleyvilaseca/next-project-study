@@ -2,7 +2,68 @@ import Head from 'next/head';
 import React from 'react';
 import Header from '../../layout/Header'
 
+import { index } from '../../store/actions/vehicle_.action';
+import { useSelector, useDispatch } from 'react-redux';
+import { ThemeContext } from '@emotion/react';
+import { apiUrl, SCROLL } from '../../config/App'
+import { Button, CircularProgress, Fade, IconButton, Menu, MenuItem, Slide } from '@mui/material';
+import NextLink from "next/link";
+import { FaClipboard, FaEllipsisV, FaLink, FaPencilAlt, FaPlus, FaShare, FaTrash, FaUser } from 'react-icons/fa';
+import useDeviceSize from '../../support/deviceSizeVerify';
+
 export default function VehiclesScreen() {
+
+    const dispatch = useDispatch();
+    const vehicles = useSelector(state => state.vehicleReducer_.vehicles);
+
+    const [width, height] = useDeviceSize();
+
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isLoadMore, setIsLoadMore] = React.useState(false);
+    const [query, setQuery] = React.useState({ page: 1 });
+    const [isDeleted, setIsDeleted] = React.useState(null);
+    const [menuEl, setMenuEl] = React.useState(null);
+    const [confirmEl, setConfirmEl] = React.useState(null);
+
+    const _index = (LoadMore) => {
+        dispatch(index(query, LoadMore))
+            .then(res => {
+                if (res) setIsLoading(false);
+                if (isLoadMore) setIsLoadMore(false);
+            })
+    }
+
+    React.useEffect(() => {
+        document.addEventListener('scroll', _handleScroll)
+        _index()
+    }, []);
+
+    const _handleScroll = (event) => {
+        let scrollTop = event.srcElement.body.scrollHeight - (event.srcElement.body.offsetHeight + event.srcElement.body.scrollTop);
+        if (scrollTop < SCROLL) {
+            if (!isLoadMore) _handleLoadMore();
+        }
+    }
+
+    const _handleLoadMore = () => {
+        if (vehicles.currrent_page < vehicles.last_page) {
+            setQuery({
+                ...query,
+                page: query.page + 1
+            }, () => {
+                _index(true);
+            })
+        }
+    }
+
+    const _handleMenu = (event) => {
+        setMenuEl(event.currentTarget)
+    }
+
+    const Transition = React.forwardRef((props, ref) => {
+        return <Slide direction='up' ref={ref} {...props} />
+    })
+
     return (
         <React.Fragment>
             <Head>
@@ -13,9 +74,110 @@ export default function VehiclesScreen() {
 
             <Header title="Vehicles" />
 
-            <div className='container-fluid'>
-                Veiculos
+            <div className='container mt-4 pt-3'>
+                {(isLoading) ?
+                    <div className='d-flex justify-content-center mt-5 pt-5'><CircularProgress /></div> :
+                    <>
+                        <div className='d-flex mb-4'>
+                            <h3 className='font-weight-normal'>Veículos</h3>
+                            <NextLink href="#">
+                                <Button className='ms-auto' variant='contained' color="primary" size="large">
+                                    <FaPlus size="1.5em" className='mr-2' />
+                                </Button>
+                            </NextLink>
+                        </div>
+
+                        <div className='card'>
+                            {(vehicles.data.length > 0) &&
+                                <div className='card-header'>
+                                    <h6 className='m-0'> Veículos {vehicles.total}</h6>
+                                </div>
+                            }
+                        </div>
+
+                        <div className='p-2 p-md-3'>
+                            {vehicles.data?.map((item, index) => (
+                                <React.Fragment>
+                                    <div className='d-flex'>
+                                        <div className='vehicle-img d-flex justify-content-center align-items-center'>
+                                            {(isDeleted === item.id) ?
+                                                <CircularProgress /> :
+                                                (item.cover &&
+                                                    <img alt="" className='shadow rounded' src={`${apiUrl}api/thumb/vehicles/${item.cover.image}?u=${item.cover.user_id}&s=${item.cover.vehicle_id}&w=${180}&h=${135}`} />
+                                                )
+                                            }
+                                        </div>
+
+                                        <div className='vehicle-detail pl-3 pl-md-4'>
+                                            <h6>{item.vehicle_brand.label} {item.vehicle_model.label}</h6>
+                                            {/* <strong className='d-block'> {item.vehicle_version.label} </strong> */}
+                                            {(item.vehicle_price) &&
+                                                <strong className='text-danger h5 d-block'> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.vehicle_price)} </strong>
+                                            }
+                                        </div>
+
+                                        <div className='ml-auto'>
+                                            <IconButton
+                                                onClick={_handleMenu}
+                                                id={index}
+                                            >
+                                                <FaEllipsisV />
+                                            </IconButton>
+
+                                            {(menuEl) &&
+                                                <Menu
+                                                    anchorEl={menuEl}
+                                                    getContentAnchorEl={null}
+                                                    anchorOrigin={{
+                                                        vertical: 'top',
+                                                        horizontal: 'left'
+                                                    }}
+                                                    transformOrigin={{
+                                                        vertical: 'top',
+                                                        horizontal: 'right'
+                                                    }}
+                                                    TransitionComponent={
+                                                        width < 577 ? Transition : Fade
+                                                    }
+                                                    open={(index === parseInt(menuEl.id))}
+                                                    onClose={() => setMenuEl(null)}
+                                                    onClick={() => setMenuEl(null)}
+                                                >
+                                                    <MenuItem>
+                                                        <FaClipboard size="1.2em" className="mr-4" /> Notas
+                                                    </MenuItem>
+
+                                                    <MenuItem>
+                                                        <FaUser size="1.2em" className="mr-4" /> Proprietários
+                                                    </MenuItem>
+
+                                                    <MenuItem>
+                                                        <FaLink size="1.2em" className="mr-4" /> Visualizar
+                                                    </MenuItem>
+
+                                                    <MenuItem>
+                                                        <FaPencilAlt size="1.2em" className="mr-4" /> Editar
+                                                    </MenuItem>
+
+                                                    <MenuItem>
+                                                        <FaTrash size="1.2em" className="mr-4" /> Apagar
+                                                    </MenuItem>
+
+                                                    <MenuItem>
+                                                        <FaShare size="1.2em" className="mr-4" /> Compartilhar
+                                                    </MenuItem>
+                                                </Menu>
+                                            }
+                                        </div>
+
+                                    </div>
+                                </React.Fragment>
+                            ))}
+
+                        </div>
+                    </>
+                }
             </div>
-        </React.Fragment>
+        </React.Fragment >
     )
 }

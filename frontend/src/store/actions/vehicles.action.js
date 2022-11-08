@@ -65,7 +65,6 @@ export const deletePhoto = (id) => dispatch => {
     const endpoint = '/api/upload/vehicle';
     return HttpAuthUpload.delete(`${endpoint}/${id}`)
         .then(res => {
-            console.log(res.data.id);
             if (res.data.id) dispatch(deletePhotoResponse(res.data));
         })
         .catch(error => {
@@ -110,6 +109,10 @@ export const store = () => dispatch => {
             dispatch(indexResponse(res.data))
         })
         .catch(error => {
+            const { data } = error.response;
+
+            if (data.error) dispatch(errors(data.error));
+
             console.log("error", error)
         })
 }
@@ -121,12 +124,17 @@ export const show = (id) => dispatch => {
             dispatch(indexResponse(res.data))
         })
         .catch(error => {
+            const { data } = error.response;
+
+            if (data.error) dispatch(errors(data.error));
+
             console.log("error", error)
         })
 }
 
 export const update = (data) => dispatch => {
     dispatch(changeLoading({ open: true }));
+
     const endpoint = '/api/vehicles';
     return HttpAuth.put(`${endpoint}/${data.id}`, data)
         .then(res => {
@@ -135,7 +143,9 @@ export const update = (data) => dispatch => {
         })
         .catch(error => {
             dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
+            const { data } = error.response;
+
+            if (data.error) dispatch(errors(data.error));
             console.log("error", error)
         })
 }
@@ -146,17 +156,17 @@ export const destroyResponse = (payload) => ({
 })
 
 export const destroy = (id) => dispatch => {
-    // dispatch(changeLoading({ open: true }));
     const endpoint = '/api/vehicles';
     return HttpAuth.delete(`${endpoint}/${id}`)
         .then(res => {
-            // dispatch(changeLoading({ open: false }));
             dispatch(destroyResponse(id));
-            // dispatch(success(true));
         })
         .catch(error => {
-            // dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
+
+            const { data } = error.response;
+
+            if (data.error) dispatch(errors(data.error));
+
             console.log("error", error);
         })
 }
@@ -172,7 +182,6 @@ export const brand = (vehicle_type) => dispatch => {
         })
         .catch(error => {
             dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
             console.log("error", error);
         })
 }
@@ -188,7 +197,6 @@ export const model = (vehicle_type, vehicle_brand) => dispatch => {
         })
         .catch(error => {
             dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
             console.log("error", error);
         })
 }
@@ -204,24 +212,21 @@ export const version = (vehicle_brand, vehicle_model) => dispatch => {
         })
         .catch(error => {
             dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
             console.log("error", error);
         })
 }
 
 export const get_cep = (zipCode) => dispatch => {
-    // dispatch(changeLoading({ open: true }));
     const endpoint = '/api/webservice/cep';
     const body = { cep: zipCode };
     return HttpAuth.post(`${endpoint}`, body)
         .then(res => {
             dispatch(change(res.data))
-            dispatch(success(true));
             return res;
         })
         .catch(error => {
-            // dispatch(changeLoading({ open: false }));
-            dispatch(success(false));
+            const { data } = error.response;
+            if (data.error) dispatch(errors(data.error));
             console.log("error", error);
         })
 }

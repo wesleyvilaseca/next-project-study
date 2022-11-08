@@ -4,15 +4,16 @@ import Header from '../../layout/Header'
 import { useRouter } from 'next/router'
 import { changeLoading } from "../../store/actions/loading.action";
 import { useSelector, useDispatch } from 'react-redux';
-import { store, show, change, get_cep, brand, model, version, uploadPhoto, deletePhoto, reorderPhoto } from '../../store/actions/vehicles.action';
+import { store, show, update, change, get_cep, brand, model, version, uploadPhoto, deletePhoto, reorderPhoto, success } from '../../store/actions/vehicles.action';
 import MaskedInput from 'react-text-mask';
-import { TextField, InputAdornment, CircularProgress, Select, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
+import { TextField, InputAdornment, CircularProgress, Select, MenuItem, FormControlLabel, Checkbox, Button } from '@mui/material';
 import { NumericFormat } from 'react-number-format';
-import {arrayMoveImmutable} from 'array-move';
+import { arrayMoveImmutable } from 'array-move';
 import { apiUrl } from '../../config/App';
 import { SortableContainer, SortableElement } from 'react-sortable-hoc';
-import { FaTrash } from 'react-icons/fa';
+import { FaSave, FaTrash } from 'react-icons/fa';
 import { ConfirmComponent } from '../../components'
+import NextLink from "next/link";
 
 const SortableItem = SortableElement(({ value }) => {
     return (
@@ -53,7 +54,7 @@ const NumberFormatCustom = (props) => {
             onChange={values => {
                 onChange({
                     target: {
-                        value: values.value
+                        value: values.target.value
                     }
                 })
             }}
@@ -83,7 +84,7 @@ export default function VehicleCreateScreen() {
         if (state.vehicle_id) {
             dispatch(show(state.vehicle_id))
                 .then(res => {
-                    setState({ isLoading: false })
+                    setState({ ...state, isLoading: false })
                     dispatch(changeLoading({ open: false }))
                 })
                 .catch(error => {
@@ -93,7 +94,7 @@ export default function VehicleCreateScreen() {
         } else {
             dispatch(store())
                 .then(res => {
-                    setState({ isLoading: false })
+                    setState({ ...state, isLoading: false })
                     dispatch(changeLoading({ open: false }))
 
                 })
@@ -108,11 +109,12 @@ export default function VehicleCreateScreen() {
     useEffect(() => {
         if (!router.isReady) return;
         const id = router.query.id
-        if (id) setState({ vehicle_id: id })
+        if (id) setState({ ...state, vehicle_id: id })
 
         index()
 
-    }, [router.isReady, setState])
+        if (data) router.push('/vehicles')
+    }, [router.isReady, state, data])
 
     const handleUpload = (event) => {
         [...event.target.files].map(img => {
@@ -123,15 +125,15 @@ export default function VehicleCreateScreen() {
             return dispatch(uploadPhoto(body));
         })
 
-        if (data.error.photos && delete data.error.photos);
+        if (data.error.vehicle_photos && delete data.error.vehicle_photos);
 
     }
 
     const _deletePhoto = (id) => {
-        setState({ isDeleted: id });
+        setState({ ...state, isDeleted: id });
         dispatch(deletePhoto(id))
             .then(res => {
-                res && setState({ isDeleted: null });
+                res && setState({ ...state, isDeleted: null });
             })
             .catch(error => {
                 console.log(error);
@@ -139,14 +141,13 @@ export default function VehicleCreateScreen() {
     }
 
     const onSortEnd = ({ oldIndex, newIndex }) => {
-        // return console.log(oldIndex, newIndex, data.vehicle.vehicle_photos);
         let items = arrayMoveImmutable(data.vehicle.vehicle_photos, oldIndex, newIndex);
         let order = items.map(({ id }) => id);
         dispatch(reorderPhoto({ order: order }, items));
     }
 
     const handleConfirm = event => {
-        setState({ confirmEl: event.currentTarget })
+        setState({ ...state, confirmEl: event.currentTarget })
     }
 
     return (
@@ -158,14 +159,13 @@ export default function VehicleCreateScreen() {
             </Head>
 
             <Header title="Veículos gestão" />
-
             <div className='container mt-4 pt-3'>
 
                 {(!state.isLoading) && (
                     <div className='row'>
                         <div className='col-md-7'>
                             <h3 className='font-weight-normal mb-4'> Localização do Veículo</h3>
-                            <div className='card card-body'>
+                            <div className='card card-body' onClick={() => setState({ ...state, tips: 0 })}>
                                 <div className='row'>
                                     <div className='col-md-7'>
                                         <TextField
@@ -179,13 +179,13 @@ export default function VehicleCreateScreen() {
                                                 onChange: text => {
                                                     dispatch(change({ zipCode: text.target.value }))
                                                     if (text.target.value.length > 8) {
-                                                        setState({ isLoadingCep: true })
+                                                        setState({ ...state, isLoadingCep: true })
                                                         dispatch(get_cep(text.target.value))
                                                             .then(res => {
-                                                                if (res) setState({ isLoadingCep: false })
+                                                                if (res) setState({ ...state, isLoadingCep: false })
                                                             })
                                                             .catch(error => {
-                                                                setState({ isLoadingCep: false })
+                                                                setState({ ...state, isLoadingCep: false })
                                                             })
 
                                                         if (data.error.zipCode) {
@@ -237,7 +237,7 @@ export default function VehicleCreateScreen() {
                             </div>
 
                             <h3 className='font-weight-normal mt-4 mb-4'> Dados do Veiculo </h3>
-                            <div className='card card-body'>
+                            <div className='card card-body' onClick={() => setState({ ...state, tips: 1 })}>
                                 <div className='form-group'>
                                     <label className='label-custo'>Categoria</label>
                                     <Select
@@ -402,7 +402,7 @@ export default function VehicleCreateScreen() {
                                 </div>
                             </div>
                             {(data.vehicle.vehicle_type === 2020) &&
-                                <div className='card card-body mt-2'>
+                                <div className='card card-body mt-2' onClick={() => setState({ ...state, tips: 1 })}>
                                     <div className='row'>
 
                                         <>
@@ -487,7 +487,7 @@ export default function VehicleCreateScreen() {
                             }
 
                             {(data.vehicle.vehicle_type === 2060) &&
-                                <div className='card card-body mt-2'>
+                                <div className='card card-body mt-2' onClick={() => setState({ ...state, tips: 1 })}>
                                     <div className='row'>
                                         <>
                                             <div className='col-md-6 form-group'>
@@ -527,7 +527,9 @@ export default function VehicleCreateScreen() {
                                                     InputProps={{
                                                         inputComponent: NumberFormatCustom,
                                                         value: data.vehicle.vehicle_mileage || '',
-                                                        onChange: text => dispatch(change({ vehicle_mileage: text.target.value }))
+                                                        onChange: text => {
+                                                            dispatch(change({ vehicle_mileage: text.target.value }))
+                                                        }
                                                     }} />
                                             </div>
                                         </>
@@ -535,10 +537,10 @@ export default function VehicleCreateScreen() {
                                 </div>
                             }
 
-                            <div className='card card-body mt-4 mb-4'>
+                            <div className='card card-body mt-4 mb-4' onClick={() => setState({ ...state, tips: 1 })}>
                                 <h3 className='font-weight-normal'> Itens e opcionais </h3>
                                 <div className='row'>
-                                    {data.features.map(item => (item.vehicle_type_id === data.vehicle.vehicle_type) && (
+                                    {data.features?.map(item => (item.vehicle_type_id === data.vehicle.vehicle_type) && (
                                         <div key={item.id} className="col-md-6">
                                             <FormControlLabel
                                                 control={
@@ -566,7 +568,7 @@ export default function VehicleCreateScreen() {
                                 </div>
                             </div>
 
-                            <div className='card card-body mt-4 mb-4'>
+                            <div className='card card-body mt-4 mb-4' onClick={() => setState({ ...state, tips: 1 })}>
                                 <h3 className='font-weight-normal'> Financeiro </h3>
                                 <div className='form-group'>
                                     <label>Estado financeiro</label>
@@ -613,8 +615,7 @@ export default function VehicleCreateScreen() {
                                             value: data.vehicle.vehicle_price || '',
                                             onChange: text => {
                                                 dispatch(change({ vehicle_price: text.target.value }))
-                                                if (data.error.vehicle_price)
-                                                    delete data.error.vehicle_price
+                                                if (data.error.vehicle_price) delete data.error.vehicle_price
                                             }
                                         }}
                                     />
@@ -624,14 +625,14 @@ export default function VehicleCreateScreen() {
                                 </div>
                             </div>
 
-                            <div className='card card-body mt-4 mb-4'>
+                            <div className='card card-body mt-4 mb-4' onClick={() => setState({ ...state, tips: 2 })}>
                                 <h3 className='font-weight-normal'> Titulo e descrição do anúncio </h3>
                                 <div className='form-group'>
                                     <label>Titulo</label>
                                     <TextField
                                         fullWidth
                                         value={data.vehicle.title || ''}
-                                        onChange={text => dispatch({ title: text.target.value })}
+                                        onChange={text => dispatch(change({ title: text.target.value }))}
                                     />
                                 </div>
 
@@ -642,16 +643,16 @@ export default function VehicleCreateScreen() {
                                         multiline
                                         rows="5"
                                         value={data.vehicle.description || ''}
-                                        onChange={text => dispatch({ description: text.target.value })}
+                                        onChange={text => dispatch(change({ description: text.target.value }))}
                                     />
                                 </div>
                             </div>
 
-                            <div className='card card-body mt-4 mb-4'>
+                            <div className='card card-body mt-4 mb-4' onClick={() => setState({ ...state, tips: 4 })}>
                                 <h3>Fotos</h3>
                                 <div>
-                                    {(data.error.photos) &&
-                                        <strong className='text-dander'> {data.error.photos[0]} </strong>
+                                    {(data.error.vehicle_photos) &&
+                                        <strong className='text-dander'> {data.error.vehicle_photos[0]} </strong>
                                     }
 
                                     <SortableList
@@ -678,7 +679,7 @@ export default function VehicleCreateScreen() {
                                                                 <ConfirmComponent
                                                                     open={(item.id === parseInt(state.confirmEl.id))}
                                                                     onConfirm={() => _deletePhoto(item.id)}
-                                                                    onClose={() => setState({ confirmEl: null })}
+                                                                    onClose={() => setState({ ...state, confirmEl: null })}
                                                                 />
                                                             )}
                                                         </>
@@ -702,7 +703,65 @@ export default function VehicleCreateScreen() {
                                     </SortableList>
                                 </div>
                             </div>
+                        </div>
 
+                        <div className='col-md-5 d-none d-md-block'>
+                            <div className='tips'>
+                                <h3 className='font-weight-normal mb-4'>
+                                    Dicas
+                                </h3>
+                                <div className='card card-body'>
+                                    {(state.tips === 0) &&
+                                        <>
+                                            <h5>Endereço</h5>
+                                        </>
+                                    }
+
+                                    {(state.tips === 1) &&
+                                        <>
+                                            <h5>Dados Veridicos</h5>
+                                            <p>Lorem ipssum</p>
+                                        </>
+                                    }
+
+                                    {(state.tips === 2) &&
+                                        <>
+                                            <h5>Titulo</h5>
+                                            <p>Lorem ipssum</p>
+                                        </>
+                                    }
+
+                                    {(state.tips === 3) &&
+                                        <>
+                                            <h5>Descrição</h5>
+                                            <p>Lorem ipssum</p>
+                                        </>
+                                    }
+
+                                    {(state.tips === 4) &&
+                                        <>
+                                            <h5>Fotos</h5>
+                                            <p>Lorem ipssum</p>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+
+                            <div className='d-flex btn-save mt-3'>
+                                <NextLink href="/vehicles">
+                                    <Button className='me-3' color="info" variant='contained' size="large">Voltar</Button>
+                                </NextLink>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="large"
+                                    onClick={() => {
+                                        dispatch(update(data.vehicle))
+                                    }}
+                                >
+                                    <FaSave size="1.5rem" /> Salvar
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
